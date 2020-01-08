@@ -1,0 +1,406 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title> TrueBlueList </title>
+
+    <link rel="icon" href="https://www.trueblue.it/wp-content/uploads/2018/07/favicon.png">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://kit.fontawesome.com/ceaa593803.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.2/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+    <link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css"/>
+
+    <style>
+      body {
+        background: #222a42;
+      }
+
+      .container {
+        color: white;
+      }
+
+      .card {
+        border-color: white;
+        background: #344675;
+      }
+
+      .bg-blue {
+        background: #00205b;
+      }
+
+      .todo-check {
+        position: absolute;
+        top: 20px;
+        right: 15px;
+      }
+
+      i {
+        cursor: pointer;
+        transition: all .2s ease-in-out;
+      }
+      
+      i:hover {
+        transform: scale(1.2);
+      }
+
+      i.fa-pen:hover {
+        color: orange;
+      }
+
+      i.fa-trash:hover {
+        color: indianred;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-dark bg-blue text-white">
+      <a class="navbar-brand" href="https://www.trueblue.it/it/">
+        <img src="https://www.trueblue.it/wp-content/uploads/2019/03/logo-trueblue-1.png" height="30" class="d-inline-block align-top" alt="">
+        TrueBlueList
+      </a>
+      <button class="btn btn-success" title="Crea Todo" data-toggle="modal" data-target="#addTodo">
+        <i class="fas fa-plus"></i>
+      </button>
+    </nav>
+
+    <div class="container">
+      <div class="row pt-3" id="todos"> </div>
+    </div>
+
+    <div class="modal fade" id="addTodo" data-backdrop="static" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"> Crea Nuovo ToDo </h5>
+            </div>
+            <div class="modal-body">
+                  <div class="form-group">
+                    <label for="addTitle"> Titolo </label>
+                    <input type="text" class="form-control" id="addTitle" aria-describedby="addTitleHelp" placeholder="Inserisci il titolo">
+                    <small id="addTitleHelp" class="form-text text-muted">Max 100 Caratteri</small>
+                  </div>
+                  <div class="form-group">
+                    <label for="addDescription"> Descrizione </label>
+                    <textarea rows="3" class="form-control" id="addDescription" aria-describedby="addDescriptionHelp" placeholder="Inserisci la descrizione"></textarea>
+                    <small id="addDescriptionHelp" class="form-text text-muted">Max 500 Caratteri</small>
+                  </div>
+                  <div class="form-group">
+                    <label for="addElapsedAt"> Scadenza </label>
+                    <input id="addElapsedAt" placeholder="Inserisci una data di scadenza"/>
+                   </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-danger" onclick="closeModal()">Annulla</button>
+              <button type="button" class="btn btn-success" onclick="addTodo()">Crea</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="editTodo" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"> Modifica ToDo </h5>
+              </div>
+              <div class="modal-body">
+                    <div class="form-group">
+                      <label for="editTitle"> Titolo </label>
+                      <input type="text" class="form-control" id="editTitle" aria-describedby="editTitleHelp" placeholder="Inserisci il titolo">
+                      <small id="editTitleHelp" class="form-text text-muted">Max 100 Caratteri</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="editDescription"> Descrizione </label>
+                      <textarea rows="3" class="form-control" id="editDescription" aria-describedby="editDescriptionHelp" placeholder="Inserisci la descrizione"></textarea>                      <small id="editDescriptionHelp" class="form-text text-muted">Max 500 Caratteri</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="editElapsedAt"> Scadenza </label>
+                      <input id="editElapsedAt" placeholder="Inserisci una data di scadenza"/>
+                     </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Annulla</button>
+                <button type="button" class="btn btn-success" onclick="saveTodo()">Salva</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
+
+    <script>
+      $(document).ready(function () {
+          
+        $('#addElapsedAt').datetimepicker({
+          footer: true, 
+          modal: true,
+          format: 'dd/mm/yyyy HH:MM'
+        });
+
+        $('#editElapsedAt').datetimepicker({
+          footer: true, 
+          modal: true,
+          format: 'dd/mm/yyyy HH:MM'
+        });
+
+      }); 
+
+      getTodos();
+
+      function getTodos() {
+        let todosHTML = "";
+        axios.get('/todos')
+          .then(res => {
+            let todos = res.data;
+            todos.forEach(todo => {
+              todosHTML += "<div class='col col-12 col-sm-6 col-md-4 mt-2 mb-2'>" +
+                                "<div class='card'>" + 
+                                  "<div class='card-body'>" +
+                                    "<h5 class='card-title'>" + todo.title + "</h5>" +
+                                    
+                                    "<div class='custom-control custom-checkbox todo-check'>" +
+                                      "<input type='checkbox' onchange=\"setTodoState('" + todo.id + "')\"" +
+                                        "class='custom-control-input' id='" + todo.id + "' " +
+                                        (todo.state ? 'checked ' : '') +
+                                        (todo.elapsed ? 'disabled' : '') +
+                                      "><label id='" + todo.id + "-label' class='custom-control-label text-white' for='" + todo.id + "'>" +
+                                        (todo.state ? 'Completato' : 'Da Fare') +
+                                      "</label>" +
+                                    "</div>" +
+                                    "<p class='card-text'>" + todo.description + "</p>" +
+                                    "<div>" +
+                                      "<span class='float-left " + 
+                                      (todo.elapsed ? 'text-danger bg-white px-2 rounded' : '') + "'>" +
+                                        (todo.elapsed ? '<b>Scaduto</b>' : todo.elapsed_at) +
+                                      "</span>" +
+                                      "<span class='float-right'>" +
+                                        (!todo.elapsed ? "<i class='fas fa-pen mr-3' onclick=\"editTodo('" + todo.id + "')\" title='Modifica Todo'></i>" : '') +
+                                        "<i class='fas fa-trash' onclick=\"deleteTodo('" + todo.id + "')\" title='Elimina Todo'></i>" + 
+                                      "</span>" +
+                                    "</div>" +
+                                  "</div>" + 
+                                "</div>" + 
+                              "</div>";
+            });
+          document.getElementById('todos').innerHTML = todosHTML;      
+        });
+      }
+
+      function addTodo() {
+        let validated = false;
+        if (
+          document.getElementById('addTitle').value.length > 0 &&
+          document.getElementById('addTitle').value.length < 100 &&
+          document.getElementById('addDescription').value.length > 0 &&
+          document.getElementById('addDescription').value.length < 500 &&
+          document.getElementById('addElapsedAt').value.length > 0
+        ) {
+          validated = true;
+        } 
+
+        if (
+          !document.getElementById('addTitle').value.length > 0 ||
+          !document.getElementById('addDescription').value.length > 0 ||
+          !document.getElementById('addElapsedAt').value.length > 0
+        ) {
+          swal.fire({
+            showConfirmButton: false,
+            type: 'error',
+            title: 'Tutti i campi sono obbligatori',
+            timer: 2000
+          });
+        }
+
+        if ( document.getElementById('addTitle').value.length > 100 ) {
+            document.getElementById('addTitleHelp').classList.add('text-danger');
+            document.getElementById('addTitleHelp').style.fontWeight = 'bold';
+            document.getElementById('addTitleHelp').classList.remove('text-muted');
+            setTimeout(function () {
+              document.getElementById('addTitleHelp').classList.remove('text-danger');
+            document.getElementById('addTitleHelp').style.fontWeight = 'normal';
+              document.getElementById('addTitleHelp').classList.add('text-muted');
+            }, 3000);
+        }
+
+        if ( document.getElementById('addDescription').value.length > 500 ) {
+            document.getElementById('addDescriptionHelp').classList.add('text-danger');
+            document.getElementById('addDescriptionHelp').style.fontWeight = 'bold';
+            document.getElementById('addDescriptionHelp').classList.remove('text-muted');
+            setTimeout(function () {
+              document.getElementById('addDescriptionHelp').classList.remove('text-danger');
+            document.getElementById('addDescriptionHelp').style.fontWeight = 'normal';
+              document.getElementById('addDescriptionHelp').classList.add('text-muted');
+            }, 3000);
+        }
+
+        if (validated) {
+          axios.post('/todo', {
+              title: document.getElementById('addTitle').value, 
+              description: document.getElementById('addDescription').value,
+              elapsed_at: document.getElementById('addElapsedAt').value,
+            })
+            .then(() => {
+
+              $(document).ready(function () {
+                $('#addTodo').modal('hide');
+              });
+
+              document.getElementById('addTitle').value = null;
+              document.getElementById('addDescription').value = null;
+              document.getElementById('addElapsedAt').value = null;
+              swal.fire({
+                title: 'ToDo Creato',
+                  type: 'success',
+                  toast: true,
+                  position: 'top',
+                  showConfirmButton: false,
+                  timer: 3000
+              })
+              getTodos();
+            })
+        }
+      }
+
+      let todo_id = null;
+
+      function editTodo(id) {
+        todo_id = id;
+        axios.get('/todo/' + id)
+          .then(res => {
+            document.getElementById('editTitle').value = res.data.title;
+            document.getElementById('editDescription').value = res.data.description;
+            document.getElementById('editElapsedAt').value = res.data.elapsed_at;
+            $(document).ready(function () {
+                $('#editTodo').modal('show');
+              });
+          });
+      }
+      
+      function saveTodo() {
+        let validated = false;
+        if (
+          document.getElementById('editTitle').value.length > 0 &&
+          document.getElementById('editTitle').value.length < 100 &&
+          document.getElementById('editDescription').value.length > 0 &&
+          document.getElementById('editDescription').value.length < 500 &&
+          document.getElementById('editElapsedAt').value.length > 0
+        ) {
+          validated = true;
+        } 
+
+        if (
+          !document.getElementById('editTitle').value.length > 0 ||
+          !document.getElementById('editDescription').value.length > 0 ||
+          !document.getElementById('editElapsedAt').value.length > 0
+        ) {
+          swal.fire({
+            showConfirmButton: false,
+            type: 'error',
+            title: 'Tutti i campi sono obbligatori',
+            timer: 2000
+          });
+        }
+
+        if ( document.getElementById('editTitle').value.length > 100 ) {
+            document.getElementById('editTitleHelp').classList.add('text-danger');
+            document.getElementById('editTitleHelp').style.fontWeight = 'bold';
+            document.getElementById('editTitleHelp').classList.remove('text-muted');
+            setTimeout(function () {
+              document.getElementById('editTitleHelp').classList.remove('text-danger');
+            document.getElementById('editTitleHelp').style.fontWeight = 'normal';
+              document.getElementById('editTitleHelp').classList.add('text-muted');
+            }, 3000);
+        }
+
+        if ( document.getElementById('editDescription').value.length > 500 ) {
+            document.getElementById('editDescriptionHelp').classList.add('text-danger');
+            document.getElementById('editDescriptionHelp').style.fontWeight = 'bold';
+            document.getElementById('editDescriptionHelp').classList.remove('text-muted');
+            setTimeout(function () {
+              document.getElementById('editDescriptionHelp').classList.remove('text-danger');
+            document.getElementById('editDescriptionHelp').style.fontWeight = 'normal';
+              document.getElementById('editDescriptionHelp').classList.add('text-muted');
+            }, 3000);
+        }
+
+        if (validated) {
+          axios.put('/todo/' + todo_id, {
+              title: document.getElementById('editTitle').value, 
+              description: document.getElementById('editDescription').value,
+              elapsed_at: document.getElementById('editElapsedAt').value,
+            })
+            .then(() => {
+
+              $(document).ready(function () {
+                $('#editTodo').modal('hide');
+              });
+
+              document.getElementById('editTitle').value = null;
+              document.getElementById('editDescription').value = null;
+              document.getElementById('editElapsedAt').value = null;
+              swal.fire({
+                title: 'ToDo Modificato',
+                  type: 'success',
+                  toast: true,
+                  position: 'top',
+                  showConfirmButton: false,
+                  timer: 3000
+              });
+              getTodos();
+              todo_id = null;
+            });
+        }
+        
+      }
+
+      function deleteTodo(id) {
+        axios.delete('/todo/' + id)
+          .then(() => {
+            swal.fire({
+              title: 'ToDo Eliminato',
+              type: 'success',
+              toast: true,
+              position: 'top',
+              showConfirmButton: false,
+              timer: 3000
+            });
+            getTodos();
+          })
+      }
+
+      function setTodoState(id) {
+        document.getElementById(id + '-label').innerHTML = document.getElementById(id).checked ? 'Completato' : 'Da Fare';
+        let state = document.getElementById(id).checked;
+        axios.put('/todo/' + id + '/' + state);
+      }
+
+      function closeModal() {
+        $(document).ready(function () {
+          $('#addTodo').modal('hide');
+          $('#editTodo').modal('hide');
+          document.getElementById('addTitle').value = null;
+          document.getElementById('addDescription').value = null;
+          document.getElementById('addElapsedAt').value = null;
+          document.getElementById('editTitle').value = null;
+          document.getElementById('editDescription').value = null;
+          document.getElementById('editElapsedAt').value = null;
+          todo_id = null;
+        });
+      }
+
+    </script>
+  </body>
+</html>

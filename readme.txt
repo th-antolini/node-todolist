@@ -1,5 +1,4 @@
-Ciao Nicolò, benvenuto nell'App TrueBlueList.
-Spero ti piaccia il nome :)
+Ciao, benvenuto nell'App Todolist.
 
 Da terminale entra nella cartella dove hai clonato il progetto
 Per installare le dipendenze lancia il comando => npm install
